@@ -8,7 +8,7 @@ import imageio_ffmpeg
 # PAGE CONFIG
 # =========================
 st.set_page_config(
-    page_title="MP4 to Mobile Video Converter | TechieHelp",
+    page_title="MP4 Mobile Video Converter | TechieHelp",
     page_icon="📱",
     layout="centered"
 )
@@ -56,30 +56,30 @@ st.markdown('<div class="box">', unsafe_allow_html=True)
 st.subheader("📤 Upload MP4 Video")
 
 uploaded = st.file_uploader(
-    "Choose MP4 video",
+    "Choose MP4 video (any ratio: 9:16, 16:9, 1:1)",
     type=["mp4"]
 )
 
 if uploaded:
     st.video(uploaded)
 
-    st.subheader("⚙️ Select Mobile Quality")
+    st.subheader("⚙️ Select Output Quality (Aspect Ratio Preserved)")
 
     quality = st.selectbox(
-        "Choose resolution",
-        ["360p (Small)", "480p (Medium)", "720p (HD)"]
+        "Choose target height",
+        ["360p", "480p", "720p"]
     )
 
-    scale_map = {
-        "360p (Small)": "640:360",
-        "480p (Medium)": "854:480",
-        "720p (HD)": "1280:720"
+    height_map = {
+        "360p": "360",
+        "480p": "480",
+        "720p": "720"
     }
 
-    scale = scale_map[quality]
+    target_height = height_map[quality]
 
     if st.button("🚀 Convert & Download Video", use_container_width=True):
-        with st.spinner("Converting video for mobile..."):
+        with st.spinner("Converting video (keeping original aspect ratio)..."):
             # Save uploaded file
             with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as tmp:
                 tmp.write(uploaded.read())
@@ -90,14 +90,15 @@ if uploaded:
             # Get FFmpeg path safely
             ffmpeg_path = imageio_ffmpeg.get_ffmpeg_exe()
 
-            # FFmpeg command
+            # 🔥 Aspect Ratio SAFE command
             command = [
                 ffmpeg_path, "-y",
                 "-i", input_path,
-                "-vf", f"scale={scale}",
+                "-vf", f"scale=-2:{target_height}",
                 "-c:v", "libx264",
                 "-preset", "fast",
                 "-crf", "24",
+                "-pix_fmt", "yuv420p",
                 "-c:a", "aac",
                 "-b:a", "128k",
                 output_path
@@ -113,10 +114,10 @@ if uploaded:
             os.remove(input_path)
             os.remove(output_path)
 
-        st.success("🎉 Video converted successfully!")
+        st.success("🎉 Video converted (aspect ratio preserved)")
 
         st.download_button(
-            label="⬇️ Download Mobile MP4",
+            label="⬇️ Download MP4 Video",
             data=video_bytes,
             file_name="converted_mobile_video.mp4",
             mime="video/mp4",
